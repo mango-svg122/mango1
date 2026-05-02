@@ -1,10 +1,10 @@
 import React from 'react';
-import { Particles as ReactParticles } from 'react-tsparticles';
-import { loadFull } from 'tsparticles';
+import Particles from '@tsparticles/react';
+import { loadSlim } from '@tsparticles/slim';
 
 const ParticleBackground = () => {
   const particlesInit = async (engine) => {
-    await loadFull(engine);
+    await loadSlim(engine);
   };
 
   const particlesOptions = {
@@ -59,7 +59,7 @@ const ParticleBackground = () => {
   };
 
   return (
-    <ReactParticles
+    <Particles
       id="tsparticles"
       init={particlesInit}
       options={particlesOptions}
