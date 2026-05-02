@@ -1,0 +1,13 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: #0d0d25;
+  /* Star field using tiny white dots */
+  background-image: radial-gradient(white 1px, transparent 0);
+  background-size: 2px 2px;
+}
