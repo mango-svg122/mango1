@@ -1,11 +1,13 @@
 import React from 'react';
-import ParticleBackground from './components/ParticleBackground';
+import StarField from './components/StarField';
+import ParticleTrail from './components/ParticleTrail';
 import Moon from './components/Moon';
 
 const App = () => {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <ParticleBackground />
+      <StarField />
+      <ParticleTrail />
       <Moon />
     </div>
   );
