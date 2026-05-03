@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OracleDivine — BaZi Reading</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-controls">
+        <button class="lang-btn" id="langBtn" onclick="app.toggleLang()">中文</button>
+        <div class="seal">卜卦</div>
+      </div>
+      <h1><span class="cn">卜卦</span> OracleDivine</h1>
+      <p class="subtitle" id="subtitle">BaZi — Four Pillars of Destiny</p>
+    </header>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <!-- Input Section -->
+    <section class="section" id="inputSection">
+      <h2 class="section-title" id="inputTitle">Enter Your Birth Information</h2>
+      <form id="baziForm" onsubmit="app.handleSubmit(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label id="lblDate">Birth Date</label>
+            <input type="date" id="birthDate" required>
+          </div>
+          <div class="form-group">
+            <label id="lblTime">Birth Time</label>
+            <input type="time" id="birthTime" value="12:00" required>
+            <span class="hint-text" id="timeHint">If unknown, use 12:00 (noon)</span>
+          </div>
+          <div class="form-group">
+            <label id="lblGender">Gender</label>
+            <select id="gender" required>
+              <option value="male" id="optMale">Male</option>
+              <option value="female" id="optFemale">Female</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label id="lblTz">Timezone (UTC)</label>
+            <select id="tzOffset">
+              <option value="-12">UTC-12</option>
+              <option value="-11">UTC-11</option>
+              <option value="-10">UTC-10</option>
+              <option value="-9">UTC-9</option>
+              <option value="-8">UTC-8</option>
+              <option value="-7">UTC-7</option>
+              <option value="-6">UTC-6</option>
+              <option value="-5">UTC-5</option>
+              <option value="-4">UTC-4</option>
+              <option value="-3">UTC-3</option>
+              <option value="-2">UTC-2</option>
+              <option value="-1">UTC-1</option>
+              <option value="0">UTC+0</option>
+              <option value="1">UTC+1</option>
+              <option value="2">UTC+2</option>
+              <option value="3">UTC+3</option>
+              <option value="4">UTC+4</option>
+              <option value="5">UTC+5</option>
+              <option value="5.5">UTC+5:30</option>
+              <option value="6">UTC+6</option>
+              <option value="7">UTC+7</option>
+              <option value="8" selected>UTC+8</option>
+              <option value="9">UTC+9</option>
+              <option value="10">UTC+10</option>
+              <option value="11">UTC+11</option>
+              <option value="12">UTC+12</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label id="lblLng">Longitude</label>
+            <input type="number" id="longitude" step="0.01" placeholder="e.g. 121.47 (Shanghai)">
+            <span class="hint-text">East positive, West negative</span>
+          </div>
+          <div class="form-group">
+            <label id="lblLat">Latitude</label>
+            <input type="number" id="latitude" step="0.01" placeholder="e.g. 31.23 (Shanghai)">
+            <span class="hint-text">North positive, South negative</span>
+          </div>
+          <button type="submit" class="btn-primary" id="btnCalculate">Reveal Your Destiny</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Results Section -->
+    <div class="results" id="resultsSection">
+
+      <!-- BaZi Chart -->
+      <section class="section">
+        <h2 class="section-title" id="chartTitle"><span class="accent">✦</span> Your BaZi Chart</h2>
+        <div class="info-grid" style="margin-bottom:16px">
+          <span class="label" id="lblSolarDate">Solar Date</span>
+          <span class="value" id="solarDateDisplay"></span>
+          <span class="label" id="lblLunarDate">Lunar Date</span>
+          <span class="value" id="lunarDateDisplay"></span>
+          <span class="label" id="lblAnimal">Zodiac Animal</span>
+          <span class="value" id="animalDisplay"></span>
+          <span class="label" id="lblAdjustedTime">True Solar Time</span>
+          <span class="value" id="adjustedTimeDisplay"></span>
+        </div>
+
+        <div class="bazi-chart" id="baziChart"></div>
+
+        <div style="margin-top:16px; padding:16px; background:rgba(245,240,232,0.5); border-radius:6px; border:1px solid var(--border-color)">
+          <strong id="lblDayMasterInfo">Your Day Master:</strong>
+          <span id="dayMasterDisplay" style="font-size:1.3rem; font-weight:700; color:var(--accent-red); margin-left:8px"></span>
+        </div>
+      </section>
+
+      <!-- Five Elements -->
+      <section class="section">
+        <h2 class="section-title" id="elemTitle"><span class="accent">✦</span> Five Elements Distribution</h2>
+        <div class="element-bars" id="elementBars"></div>
+        <p id="elementBalance" style="font-size:0.9rem; color:var(--text-secondary); margin-top:12px; text-align:center"></p>
+      </section>
+
+      <!-- Analysis -->
+      <section class="section">
+        <h2 class="section-title" id="analysisTitle"><span class="accent">✦</span> Life Analysis</h2>
+        <div class="analysis-grid" id="analysisGrid"></div>
+      </section>
+
+      <!-- Dayun -->
+      <section class="section">
+        <h2 class="section-title" id="dayunTitle"><span class="accent">✦</span> Great Fortune Cycles</h2>
+        <div style="margin-bottom:12px">
+          <span style="font-size:0.9rem; color:var(--text-secondary)" id="startAgeDisplay"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="dayun-table" id="dayunTable">
+            <thead>
+              <tr>
+                <th id="thAge">Age</th>
+                <th id="thPillar">Pillar</th>
+                <th id="thElement">Element</th>
+                <th id="thTenGod">10 Gods</th>
+                <th id="thDesc">Influence</th>
+              </tr>
+            </thead>
+            <tbody id="dayunBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Liunian -->
+      <section class="section">
+        <h2 class="section-title" id="liunianTitle"><span class="accent">✦</span> Current Year Fortune</h2>
+        <div class="liunian-card" id="liunianCard"></div>
+      </section>
+
+      <!-- Glossary -->
+      <section class="section">
+        <h2 class="section-title" id="glossaryTitle"><span class="accent">✦</span> Glossary</h2>
+        <div id="glossaryContent"></div>
+      </section>
+    </div>
+
+    <footer class="footer">
+      <p>OracleDivine — BaZi Four Pillars of Destiny</p>
+    </footer>
+  </div>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Calculating...</div>
+  </div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

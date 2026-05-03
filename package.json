@@ -1,0 +1,9 @@
+{
+  "name": "oracle-divine",
+  "version": "1.0.0",
+  "description": "OracleDivine - BaZi (Four Pillars of Destiny) fortune telling web app",
+  "scripts": {
+    "dev": "node server/src/index.js",
+    "start": "node server/src/index.js"
+  }
+}
