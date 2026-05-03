@@ -27,13 +27,7 @@ router.post('/calculate', (req, res) => {
     res.json({
       success: true,
       data: {
-        solar: baziData.solar,
-        lunar: baziData.lunar,
-        adjustedTime: baziData.adjustedTime,
-        pillars: baziData.pillars,
-        dayMaster: baziData.dayMaster,
-        yearAnimal: baziData.yearAnimal,
-        gender: baziData.gender,
+        ...baziData,
         analysis,
         fortune,
       },
