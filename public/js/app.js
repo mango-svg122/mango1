@@ -115,7 +115,7 @@ const app = (() => {
     populateRegions();
   }
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault();
     const errorBox = document.getElementById('errorBox');
     errorBox.classList.remove('active');
@@ -139,7 +139,7 @@ const app = (() => {
 
     showLoading(true);
     try {
-      const result = await api.calculate({ year, month, day, hour, minute, gender, tzOffset, lng, lat });
+      const result = api.calculate({ year, month, day, hour, minute, gender, tzOffset, lng, lat });
       if (result.success) {
         currentData = result.data;
         renderResults(result.data);
