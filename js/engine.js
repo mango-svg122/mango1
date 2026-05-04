@@ -317,6 +317,78 @@ const Engine = (() => {
       return { percentages, strongest, weakest, balanceText, balanced };
     })();
 
+    const warnings = [];
+
+    const totalScore = Object.values(elementCount).reduce((a, b) => a + b, 0);
+    for (const [el, score] of Object.entries(elementCount)) {
+      const pct = totalScore > 0 ? (score / totalScore) * 100 : 0;
+      const elCh = ELEMENTS[el]?.chinese || el;
+      if (pct > 35) {
+        const overWarnings = {
+          'Wood': `${el} (${elCh}) is excessively strong. You may be stubborn, overbearing, and prone to frustration when things don't go your way. Guard against impulsive decisions.`,
+          'Fire': `${el} (${elCh}) is excessively strong. You may burn out easily, be short-tempered, and over-commit. Watch your energy levels and avoid reckless risks.`,
+          'Earth': `${el} (${elCh}) is excessively strong. You may be overly rigid, resistant to change, and stuck in routines. Stay flexible and open to new ideas.`,
+          'Metal': `${el} (${elCh}) is excessively strong. You may come across as cold, harsh, or overly critical. Guard against isolation and rigidity in relationships.`,
+          'Water': `${el} (${elCh}) is excessively strong. You may be overly emotional, indecisive, or secretive. Practice clarity and direct communication.`,
+        };
+        warnings.push({ aspect: 'element', text: overWarnings[el] || `${el} is excessive.`, level: 'caution' });
+      }
+      if (pct < 8 && pct > 0) {
+        const underWarnings = {
+          'Wood': `${el} (${elCh}) is very weak. You may lack direction and growth energy. Consider spending time in nature and practicing assertiveness.`,
+          'Fire': `${el} (${elCh}) is very weak. You may lack passion and visibility. Warmth, sunlight, and bold colors can help energize you.`,
+          'Earth': `${el} (${elCh}) is very weak. You may feel ungrounded or unstable. Routine, stability, and earth-connected practices will help.`,
+          'Metal': `${el} (${elCh}) is very weak. You may lack structure and discipline. Setting clear boundaries and routines is recommended.`,
+          'Water': `${el} (${elCh}) is very weak. You may struggle with intuition and flow. Time near water and reflective practices can help.`,
+        };
+        warnings.push({ aspect: 'element', text: underWarnings[el] || `${el} is deficient.`, level: 'caution' });
+      }
+    }
+
+    tenGodList.forEach(tg => {
+      switch (tg.english) {
+        case 'Seven Kill':
+          warnings.push({ aspect: 'tenGod', text: `Seven Kill (${tg.chinese}) in your chart: Beware of workplace pressure, power struggles, and health issues related to stress. Conflicts may arise unexpectedly.`, level: 'danger', pillar: tg.pillar });
+          break;
+        case 'Rob Wealth':
+          warnings.push({ aspect: 'tenGod', text: `Rob Wealth (${tg.chinese}) in your chart: Guard against financial losses through partnerships or friends. Avoid co-signing loans or joint investments.`, level: 'caution', pillar: tg.pillar });
+          break;
+        case 'Hurting Officer':
+          warnings.push({ aspect: 'tenGod', text: `Hurting Officer (${tg.chinese}) in your chart: Watch your words with superiors and authorities. Legal disputes and workplace conflicts are possible. Practice diplomacy.`, level: 'caution', pillar: tg.pillar });
+          break;
+        case 'Indirect Resource':
+          warnings.push({ aspect: 'tenGod', text: `Indirect Resource (${tg.chinese}) in your chart: You may feel isolated or misunderstood. Avoid overly unconventional paths without practical backup.`, level: 'neutral', pillar: tg.pillar });
+          break;
+        case 'Direct Wealth':
+          if (tenGodList.filter(t => t.type === 'wealth').length > 2) {
+            warnings.push({ aspect: 'tenGod', text: `Multiple Wealth stars present: While financially promising, this can also indicate over-attachment to material gains. Balance is key.`, level: 'neutral' });
+          }
+          break;
+        case 'Indirect Wealth':
+          if (tenGodList.filter(t => t.type === 'wealth').length > 2) {
+            warnings.push({ aspect: 'tenGod', text: `Multiple Wealth stars present: Risk of financial instability, gambling tendencies, or get-rich-quick schemes. Stay grounded.`, level: 'caution' });
+          }
+          break;
+      }
+    });
+
+    if (tenGodList.filter(tg => tg.type === 'self').length >= 3) {
+      warnings.push({ aspect: 'tenGod', text: `Multiple Peer stars (比劫) present: Strong competition in social and professional circles. Be wary of betrayals and financial competition among peers.`, level: 'caution' });
+    }
+    if (tenGodList.filter(tg => tg.type === 'authority').length >= 3) {
+      warnings.push({ aspect: 'tenGod', text: `Multiple Authority stars (官杀) present: Heavy pressure from work and responsibilities. Risk of overwork and burnout. Delegate when possible.`, level: 'danger' });
+    }
+    if (tenGodList.filter(tg => tg.type === 'output').length >= 3) {
+      warnings.push({ aspect: 'tenGod', text: `Multiple Output stars (食伤) present: Over-expressive and prone to saying too much. Guard against verbal conflicts and reputation damage.`, level: 'caution' });
+    }
+
+    if (vitality.state === '死') {
+      warnings.push({ aspect: 'vitality', text: `Your Day Master element is in "${vitality.stateEn}" state — this is your weakest season. Avoid major decisions, new ventures, or health neglect during this period.`, level: 'danger' });
+    }
+    if (vitality.state === '囚') {
+      warnings.push({ aspect: 'vitality', text: `Your Day Master element is in "${vitality.stateEn}" state — external forces may constrain you. Avoid confrontations with authority figures.`, level: 'caution' });
+    }
+
     const getElementMetaphor = (el) => ({
       'Wood': 'growth, flexibility, creativity, and expansion like a tree reaching for the sky',
       'Fire': 'passion, brilliance, warmth, and transformation like a radiant flame',
@@ -338,6 +410,7 @@ const Engine = (() => {
         health: { title: 'Health & Vitality', items: [] },
       },
       fiveElementSummary,
+      warnings,
     };
   }
 
@@ -442,11 +515,63 @@ const Engine = (() => {
     };
   }
 
+  function calcAlmanac() {
+    const now = new Date();
+    const solar = Solar.fromYmdHms(now.getFullYear(), now.getMonth() + 1, now.getDate(), 12, 0, 0);
+    const lunar = solar.getLunar();
+    const eightChar = lunar.getEightChar();
+
+    const yi = typeof lunar.getDayYi === 'function' ? (lunar.getDayYi() || []) : [];
+    const ji = typeof lunar.getDayJi === 'function' ? (lunar.getDayJi() || []) : [];
+    const chong = typeof lunar.getDayChong === 'function' ? (lunar.getDayChong() || '') : '';
+    const sha = typeof lunar.getDaySha === 'function' ? (lunar.getDaySha() || '') : '';
+    const cai = typeof lunar.getDayPositionCai === 'function' ? (lunar.getDayPositionCai() || '') : '';
+    const xi = typeof lunar.getDayPositionXi === 'function' ? (lunar.getDayPositionXi() || '') : '';
+    const fu = typeof lunar.getDayPositionFu === 'function' ? (lunar.getDayPositionFu() || '') : '';
+    const ganZhi = eightChar.getDay();
+
+    return {
+      date: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`,
+      lunarMonth: lunar.getMonthInChinese(),
+      lunarDay: lunar.getDayInChinese(),
+      ganZhi,
+      yi: yi.slice(0, 8),
+      ji: ji.slice(0, 8),
+      chong, sha,
+      caiPosition: cai, xiPosition: xi, fuPosition: fu,
+    };
+  }
+
   function calculate({ year, month, day, hour, minute, gender, tzOffset, lng, lat }) {
     const baziData = calculateBazi({ year, month, day, hour, minute, gender, lng, lat, tzOffset });
     const analysis = analyzePillars(baziData.pillars, baziData.dayMaster, gender);
     const fortune = calculateFortune(gender, baziData.pillars, year);
-    return { ...baziData, analysis, fortune };
+    const almanac = calcAlmanac();
+    const liunianWarnings = calcLiunianWarnings(fortune.currentLiunian, baziData);
+    const allWarnings = [...(analysis.interpretations.warnings || []), ...liunianWarnings];
+    return { ...baziData, analysis, fortune, almanac, warnings: allWarnings };
+  }
+
+  function calcLiunianWarnings(liunian, baziData) {
+    const warnings = [];
+    if (!liunian) return warnings;
+    const ly = liunian;
+    const dm = baziData.dayMaster;
+    const yearBranch = baziData.pillars.year.branch;
+
+    if (ly.branch === yearBranch) {
+      warnings.push({ aspect: 'liunian', text: `This year (${ly.year}, ${ly.ganZhi}) is your Ben Ming Nian (本命年) — the zodiac year that clashes with your birth year. Traditionally considered a challenging year. Pay extra attention to health and avoid major risks.`, level: 'danger' });
+    }
+
+    const clashMap = { '子':'午','丑':'未','寅':'申','卯':'酉','辰':'戌','巳':'亥','午':'子','未':'丑','申':'寅','酉':'卯','戌':'辰','亥':'巳' };
+    if (clashMap[ly.branch] === yearBranch) {
+      warnings.push({ aspect: 'liunian', text: `This year (${ly.year}, ${ly.ganZhi}) clashes with your birth year pillar. It may bring unexpected changes in career or family. Proceed with caution.`, level: 'caution' });
+    }
+
+    if (ly.branch === baziData.pillars.day.branch) {
+      warnings.push({ aspect: 'liunian', text: `This year's earthly branch (${ly.branch}) matches your day branch — personal and relationship matters are highlighted. Be mindful of emotional decisions.`, level: 'neutral' });
+    }
+    return warnings;
   }
 
   return { calculate };
