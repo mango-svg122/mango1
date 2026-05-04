@@ -98,6 +98,8 @@ const app = (() => {
     document.getElementById('dayunTitle').innerHTML = `<span class="accent">✦</span> ${i18n.t('dayun')}`;
     document.getElementById('liunianTitle').innerHTML = `<span class="accent">✦</span> ${i18n.t('liunian')}`;
     document.getElementById('glossaryTitle').innerHTML = `<span class="accent">✦</span> ${i18n.t('glossary')}`;
+    document.getElementById('warningsTitle').innerHTML = `<span class="accent">⚠</span> ${i18n.t('warnings')}`;
+    document.getElementById('almanacTitle').innerHTML = `<span class="accent">✦</span> ${i18n.t('almanac')}`;
 
     document.getElementById('thAge').textContent = i18n.t('age');
     document.getElementById('thPillar').textContent = i18n.t('pillar');
@@ -143,6 +145,8 @@ const app = (() => {
       if (result.success) {
         currentData = result.data;
         renderResults(result.data);
+        renderAlmanac(result.data);
+        renderWarnings(result.data);
         document.getElementById('resultsSection').classList.add('active');
         document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
       } else {
@@ -495,7 +499,68 @@ const app = (() => {
     `).join('');
   }
 
-  function elementToChinese(el) {
+  function renderWarnings(data) {
+    const container = document.getElementById('warningsContainer');
+    const isEn = i18n.getLang() === 'en';
+    const warnings = data.warnings || [];
+    const section = document.getElementById('warningsSection');
+
+    if (!warnings.length) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+
+    container.innerHTML = warnings.map(w => {
+      const lvlClass = w.level === 'danger' ? 'warning-danger' : w.level === 'caution' ? 'warning-caution' : 'warning-neutral';
+      return `<div class="warning-item ${lvlClass}">
+        <div class="warning-icon">${w.level === 'danger' ? '⚠️' : w.level === 'caution' ? '⚡' : '●'}</div>
+        <div class="warning-text">${w.text}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderAlmanac(data) {
+    const container = document.getElementById('almanacContainer');
+    const isEn = i18n.getLang() === 'en';
+    const a = data.almanac;
+    if (!a) return;
+
+    const yiStr = a.yi && a.yi.length ? a.yi.join(', ') : (isEn ? 'No specific recommendations' : '无');
+    const jiStr = a.ji && a.ji.length ? a.ji.join(', ') : (isEn ? 'None' : '无');
+
+    container.innerHTML = `
+      <div class="almanac-header">
+        <div class="almanac-date">${a.date} | ${isEn ? 'Lunar' : '农历'} ${a.lunarMonth}${isEn ? '' : '月'}${a.lunarDay}${isEn ? '' : '日'} (${a.ganZhi})</div>
+      </div>
+      <div class="almanac-grid">
+        <div class="almanac-item good">
+          <div class="almanac-label">${isEn ? 'Auspicious' : '宜'}</div>
+          <div class="almanac-value">${yiStr}</div>
+        </div>
+        <div class="almanac-item bad">
+          <div class="almanac-label">${isEn ? 'Inauspicious' : '忌'}</div>
+          <div class="almanac-value">${jiStr}</div>
+        </div>
+        <div class="almanac-item">
+          <div class="almanac-label">${isEn ? 'Clash' : '冲'}</div>
+          <div class="almanac-value">${a.chong || (isEn ? 'None' : '无')}</div>
+        </div>
+        <div class="almanac-item">
+          <div class="almanac-label">${isEn ? 'Sha Direction' : '煞'}</div>
+          <div class="almanac-value">${a.sha || (isEn ? 'None' : '无')}</div>
+        </div>
+        <div class="almanac-item">
+          <div class="almanac-label">${isEn ? 'Wealth' : '财神'}</div>
+          <div class="almanac-value">${a.caiPosition || (isEn ? 'Unknown' : '未知')}</div>
+        </div>
+        <div class="almanac-item">
+          <div class="almanac-label">${isEn ? 'Joy' : '喜神'}</div>
+          <div class="almanac-value">${a.xiPosition || (isEn ? 'Unknown' : '未知')}</div>
+        </div>
+      </div>
+    `;
+  }
     return ({ Wood: '木', Fire: '火', Earth: '土', Metal: '金', Water: '水' })[el] || el;
   }
 
