@@ -3,6 +3,7 @@ const i18n = (() => {
     en: {
       appTitle: 'OracleDivine',
       appSubtitle: 'BaZi — Four Pillars of Destiny',
+      headerDesc: 'Derived from the I Ching, the millennium-old Chinese Book of Changes',
       langSwitch: '中文',
       inputTitle: 'Enter Your Birth Information',
       birthDate: 'Birth Date',
@@ -10,9 +11,7 @@ const i18n = (() => {
       gender: 'Gender',
       male: 'Male',
       female: 'Female',
-      timezone: 'Timezone (UTC)',
-      longitude: 'Longitude',
-      latitude: 'Latitude',
+      birthPlace: 'Birth Region',
       calculate: 'Reveal Your Destiny',
       calculating: 'Calculating...',
       errorRequired: 'Please fill in all required fields',
@@ -77,6 +76,7 @@ const i18n = (() => {
     zh: {
       appTitle: '卜卦',
       appSubtitle: '八字排盘 — 四柱预测',
+      headerDesc: '根据中国千年古书《易经》推演结果',
       langSwitch: 'English',
       inputTitle: '输入出生信息',
       birthDate: '出生日期',
@@ -146,7 +146,9 @@ const i18n = (() => {
       neutral: '平',
       primary: '核心属性',
       score: '分数',
+      birthPlace: '出生地区',
       eastEight: '东八区（中国）',
+      selectRegion: 'Select your birth region',
     },
   };
 

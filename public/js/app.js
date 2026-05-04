@@ -1,6 +1,31 @@
 const app = (() => {
   let currentData = null;
 
+  function initRegions() {
+    const sel = document.getElementById('birthRegion');
+    sel.innerHTML = '';
+    REGIONS.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      opt.textContent = r.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  function populateRegions() {
+    const sel = document.getElementById('birthRegion');
+    const isEn = i18n.getLang() === 'en';
+    const selected = sel.value;
+    sel.innerHTML = '';
+    REGIONS.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      opt.textContent = isEn ? r.name : r.nameZh;
+      sel.appendChild(opt);
+    });
+    if (selected) sel.value = selected;
+  }
+
   function toggleLang() {
     const newLang = i18n.getLang() === 'en' ? 'zh' : 'en';
     i18n.setLang(newLang);
@@ -12,6 +37,7 @@ const app = (() => {
   function updateUI() {
     document.title = i18n.t('appTitle') + ' — ' + i18n.t('appSubtitle');
     document.getElementById('subtitle').textContent = i18n.t('appSubtitle');
+    document.getElementById('headerDesc').textContent = i18n.t('headerDesc');
     document.getElementById('inputTitle').textContent = i18n.t('inputTitle');
 
     document.getElementById('lblDate').textContent = i18n.t('birthDate');
@@ -20,9 +46,8 @@ const app = (() => {
     document.getElementById('lblGender').textContent = i18n.t('gender');
     document.getElementById('optMale').textContent = i18n.t('male');
     document.getElementById('optFemale').textContent = i18n.t('female');
-    document.getElementById('lblTz').textContent = i18n.t('timezone');
-    document.getElementById('lblLng').textContent = i18n.t('longitude');
-    document.getElementById('lblLat').textContent = i18n.t('latitude');
+    document.getElementById('lblRegion').textContent = i18n.t('birthPlace');
+    document.getElementById('regionHint').textContent = 'Used for timezone and solar time correction';
     document.getElementById('btnCalculate').textContent = i18n.t('calculate');
 
     document.getElementById('chartTitle').innerHTML = `<span class="accent">✦</span> ${i18n.t('resultsTitle')}`;
@@ -43,11 +68,9 @@ const app = (() => {
     document.getElementById('lblAdjustedTime').textContent = i18n.t('adjustedTime');
     document.getElementById('lblDayMasterInfo').textContent = i18n.t('dayMaster') + ':';
 
-    if (i18n.getLang() === 'zh') {
-      document.querySelector('html').lang = 'zh-CN';
-    } else {
-      document.querySelector('html').lang = 'en';
-    }
+    document.querySelector('html').lang = i18n.getLang() === 'zh' ? 'zh-CN' : 'en';
+
+    populateRegions();
   }
 
   async function handleSubmit(e) {
@@ -65,9 +88,11 @@ const app = (() => {
     const [year, month, day] = dateVal.split('-').map(Number);
     const [hour, minute] = timeVal.split(':').map(Number);
     const gender = document.getElementById('gender').value;
-    const tzOffset = parseFloat(document.getElementById('tzOffset').value);
-    const lng = document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : undefined;
-    const lat = document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : undefined;
+    const regionId = document.getElementById('birthRegion').value;
+    const region = REGIONS.find(r => r.id === regionId);
+    const tzOffset = region ? region.tzOffset : 8;
+    const lng = region ? region.lng : undefined;
+    const lat = region ? region.lat : undefined;
 
     showLoading(true);
     try {
@@ -110,7 +135,6 @@ const app = (() => {
 
   function updateInfoDisplay(data) {
     const isEn = i18n.getLang() === 'en';
-
     const d = data.solar;
     document.getElementById('solarDateDisplay').textContent = `${d.year}-${String(d.month).padStart(2,'0')}-${String(d.day).padStart(2,'0')} ${String(d.hour).padStart(2,'0')}:${String(d.minute).padStart(2,'0')} (${getWeekdayName(d.week, isEn)})`;
 
@@ -138,19 +162,10 @@ const app = (() => {
   function renderBaziChart(data) {
     const chart = document.getElementById('baziChart');
     const isEn = i18n.getLang() === 'en';
-    const pillarLabels = [
-      i18n.t('yearPillar'),
-      i18n.t('monthPillar'),
-      i18n.t('dayPillar'),
-      i18n.t('hourPillar'),
-    ];
+    const pillarLabels = [i18n.t('yearPillar'), i18n.t('monthPillar'), i18n.t('dayPillar'), i18n.t('hourPillar')];
     const pillars = [data.pillars.year, data.pillars.month, data.pillars.day, data.pillars.hour];
 
     chart.innerHTML = '';
-
-    const headerRow = document.createElement('div');
-    headerRow.className = 'pillar-header';
-    headerRow.style.cssText = 'display:contents';
 
     const labels = document.createElement('div');
     labels.style.cssText = 'display:contents';
@@ -221,8 +236,7 @@ const app = (() => {
     pillars.forEach(p => {
       const cell = document.createElement('div');
       cell.className = 'pillar-cell ten-god-cell';
-      const tg = isEn ? p.tenGod?.english : p.tenGod?.chinese;
-      cell.textContent = tg || '';
+      cell.textContent = isEn ? p.tenGod?.english : p.tenGod?.chinese;
       row4.appendChild(cell);
     });
     chart.appendChild(row4);
@@ -261,9 +275,8 @@ const app = (() => {
     elements.forEach(el => {
       const wrapper = document.createElement('div');
       wrapper.className = 'element-bar-wrapper';
-
-      const pct = total > 0 ? Math.round(el.score / total * 100) : 0;
       const height = Math.max(4, (el.score / maxScore) * 100);
+      const pct = total > 0 ? Math.round(el.score / total * 100) : 0;
 
       const bar = document.createElement('div');
       bar.className = `element-bar bg-el-${el.key}`;
@@ -292,15 +305,10 @@ const app = (() => {
   function renderAnalysis(data) {
     const grid = document.getElementById('analysisGrid');
     const s = data.analysis.interpretations.summaries;
-    const isEn = i18n.getLang() === 'en';
-
     grid.innerHTML = '';
 
     if (s.dayMaster) {
-      const card = createAnalysisCard(
-        i18n.t('dayMaster'),
-        `<strong>${s.dayMaster.title}</strong><br><br>${s.dayMaster.body}`
-      );
+      const card = createAnalysisCard(i18n.t('dayMaster'), `<strong>${s.dayMaster.title}</strong><br><br>${s.dayMaster.body}`);
       grid.appendChild(card);
     }
 
@@ -344,26 +352,15 @@ const app = (() => {
     const fortune = data.fortune;
     const isEn = i18n.getLang() === 'en';
 
-    const sa = fortune.startAge;
-    startAgeEl.textContent = isEn
-      ? `Fortune starts at age ${sa}`
-      : `起运年龄：${sa}岁`;
+    startAgeEl.textContent = isEn ? `Fortune starts at age ${fortune.startAge}` : `起运年龄：${fortune.startAge}岁`;
 
     tbody.innerHTML = '';
-    fortune.dayun.forEach((d, i) => {
+    fortune.dayun.forEach((d) => {
       const tr = document.createElement('tr');
-      if (fortune.currentDayun && fortune.currentDayun.ageStart === d.ageStart) {
-        tr.className = 'current-row';
-      }
+      if (fortune.currentDayun && fortune.currentDayun.ageStart === d.ageStart) tr.className = 'current-row';
 
-      const ageStr = isEn
-        ? `${d.ageStart} - ${d.ageEnd}`
-        : `${d.ageStart} - ${d.ageEnd}岁`;
-
-      const stemEn = d.stemEnglish;
-      const branchEn = d.branchEnglish;
-      const pillarStr = isEn ? `${d.stem} (${stemEn}) ${d.branch} (${branchEn})` : `${d.stem}${d.branch}`;
-
+      const ageStr = isEn ? `${d.ageStart} - ${d.ageEnd}` : `${d.ageStart} - ${d.ageEnd}岁`;
+      const pillarStr = isEn ? `${d.stem} (${d.stemEnglish}) ${d.branch} (${d.branchEnglish})` : `${d.stem}${d.branch}`;
       const elStr = isEn ? d.stemElement : elementToChinese(d.stemElement);
       const tg = isEn ? d.tenGod?.english : d.tenGod?.chinese;
 
@@ -411,24 +408,18 @@ const app = (() => {
     const isEn = i18n.getLang() === 'en';
     if (!ly) { card.innerHTML = '<p>Unable to calculate</p>'; return; }
 
-    const ganZhi = ly.ganZhi;
-    const stemInfo = `${ly.stem} (${ly.stemEnglish} ${ly.stemElement})`;
-    const branchInfo = `${ly.branch} (${ly.branchEnglish} - ${ly.animal})`;
-    const tg = isEn ? ly.tenGod?.english : ly.tenGod?.chinese;
-    const vitality = isEn ? ly.vitality?.stateEn : ly.vitality?.state;
-
     card.innerHTML = `
-      <h4>${ly.year} — ${ganZhi}</h4>
-      <div class="gan-zhi el-${ly.stemElement}">${ganZhi}</div>
+      <h4>${ly.year} — ${ly.ganZhi}</h4>
+      <div class="gan-zhi el-${ly.stemElement}">${ly.ganZhi}</div>
       <div class="info-grid">
         <span class="label">${isEn ? 'Stem' : '天干'}</span>
-        <span class="value">${stemInfo}</span>
+        <span class="value">${ly.stem} (${ly.stemEnglish} ${ly.stemElement})</span>
         <span class="label">${isEn ? 'Branch' : '地支'}</span>
-        <span class="value">${branchInfo}</span>
+        <span class="value">${ly.branch} (${ly.branchEnglish} - ${ly.animal})</span>
         <span class="label">${i18n.t('tenGod')}</span>
-        <span class="value">${tg || ''}</span>
+        <span class="value">${isEn ? ly.tenGod?.english : ly.tenGod?.chinese}</span>
         <span class="label">${i18n.t('vitality')}</span>
-        <span class="value el-${ly.stemElement}">${vitality || ''}</span>
+        <span class="value el-${ly.stemElement}">${isEn ? ly.vitality?.stateEn : ly.vitality?.state}</span>
       </div>
     `;
   }
@@ -462,18 +453,16 @@ const app = (() => {
   }
 
   function elementToChinese(el) {
-    const map = { Wood: '木', Fire: '火', Earth: '土', Metal: '金', Water: '水' };
-    return map[el] || el;
+    return ({ Wood: '木', Fire: '火', Earth: '土', Metal: '金', Water: '水' })[el] || el;
   }
 
   function getWeekdayName(weekNum, isEn) {
-    const days = isEn
-      ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-      : ['日', '一', '二', '三', '四', '五', '六'];
-    return isEn ? days[weekNum] || '' : '星期' + (days[weekNum] || '');
+    return isEn
+      ? (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][weekNum] || '')
+      : '星期' + (['日', '一', '二', '三', '四', '五', '六'][weekNum] || '');
   }
 
-  // Init
+  initRegions();
   updateUI();
 
   return { handleSubmit, toggleLang };

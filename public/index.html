@@ -9,12 +9,29 @@
 <body>
   <div class="container">
     <header class="header">
-      <div class="header-controls">
-        <button class="lang-btn" id="langBtn" onclick="app.toggleLang()">中文</button>
-        <div class="seal">卜卦</div>
+      <div class="header-top">
+        <div class="header-brand">
+          <svg class="bagua-logo" viewBox="0 0 100 100" width="56" height="56">
+            <circle cx="50" cy="50" r="48" fill="#2C2416" stroke="#CC3333" stroke-width="2"/>
+            <path d="M50 2 A48 48 0 0 1 50 98 A24 24 0 0 1 50 50 A24 24 0 0 0 50 2Z" fill="#F5F0E8"/>
+            <circle cx="50" cy="74" r="10" fill="#2C2416"/>
+            <circle cx="50" cy="26" r="10" fill="#F5F0E8"/>
+            <text x="50" y="16" text-anchor="middle" font-size="8" fill="#F5F0E8" font-family="serif">☰</text>
+            <text x="84" y="50" text-anchor="middle" font-size="8" fill="#F5F0E8" font-family="serif">☲</text>
+            <text x="50" y="90" text-anchor="middle" font-size="8" fill="#CC3333" font-family="serif">☷</text>
+            <text x="16" y="50" text-anchor="middle" font-size="8" fill="#F5F0E8" font-family="serif">☵</text>
+          </svg>
+          <div class="header-text">
+            <h1><span class="cn">卜卦</span> OracleDivine</h1>
+            <p class="subtitle" id="subtitle">BaZi — Four Pillars of Destiny</p>
+          </div>
+        </div>
+        <div class="header-controls">
+          <button class="lang-btn" id="langBtn" onclick="app.toggleLang()">中文</button>
+          <div class="seal">卜卦</div>
+        </div>
       </div>
-      <h1><span class="cn">卜卦</span> OracleDivine</h1>
-      <p class="subtitle" id="subtitle">BaZi — Four Pillars of Destiny</p>
+      <p class="header-desc" id="headerDesc">Derived from the I Ching, the millennium-old Chinese Book of Changes</p>
     </header>
 
     <div class="error-box" id="errorBox"></div>
@@ -41,45 +58,10 @@
             </select>
           </div>
           <div class="form-group">
-            <label id="lblTz">Timezone (UTC)</label>
-            <select id="tzOffset">
-              <option value="-12">UTC-12</option>
-              <option value="-11">UTC-11</option>
-              <option value="-10">UTC-10</option>
-              <option value="-9">UTC-9</option>
-              <option value="-8">UTC-8</option>
-              <option value="-7">UTC-7</option>
-              <option value="-6">UTC-6</option>
-              <option value="-5">UTC-5</option>
-              <option value="-4">UTC-4</option>
-              <option value="-3">UTC-3</option>
-              <option value="-2">UTC-2</option>
-              <option value="-1">UTC-1</option>
-              <option value="0">UTC+0</option>
-              <option value="1">UTC+1</option>
-              <option value="2">UTC+2</option>
-              <option value="3">UTC+3</option>
-              <option value="4">UTC+4</option>
-              <option value="5">UTC+5</option>
-              <option value="5.5">UTC+5:30</option>
-              <option value="6">UTC+6</option>
-              <option value="7">UTC+7</option>
-              <option value="8" selected>UTC+8</option>
-              <option value="9">UTC+9</option>
-              <option value="10">UTC+10</option>
-              <option value="11">UTC+11</option>
-              <option value="12">UTC+12</option>
+            <label id="lblRegion">Birth Region</label>
+            <select id="birthRegion" required>
             </select>
-          </div>
-          <div class="form-group">
-            <label id="lblLng">Longitude</label>
-            <input type="number" id="longitude" step="0.01" placeholder="e.g. 121.47 (Shanghai)">
-            <span class="hint-text">East positive, West negative</span>
-          </div>
-          <div class="form-group">
-            <label id="lblLat">Latitude</label>
-            <input type="number" id="latitude" step="0.01" placeholder="e.g. 31.23 (Shanghai)">
-            <span class="hint-text">North positive, South negative</span>
+            <span class="hint-text" id="regionHint">Used for timezone and solar time correction</span>
           </div>
           <button type="submit" class="btn-primary" id="btnCalculate">Reveal Your Destiny</button>
         </div>
@@ -169,6 +151,7 @@
     <div class="loading-text" id="loadingText">Calculating...</div>
   </div>
 
+  <script src="js/regions.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>
