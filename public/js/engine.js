@@ -160,7 +160,7 @@ const Engine = (() => {
       adjustedTime = { hour, minute, diffMinutes: 0 };
     }
 
-    const solar = Lunar.Solar.fromYmdHms(year, month, day, adjustedTime.hour, adjustedTime.minute, 0);
+    const solar = Solar.fromYmdHms(year, month, day, adjustedTime.hour, adjustedTime.minute, 0);
     const lunar = solar.getLunar();
     const eightChar = lunar.getEightChar();
 
@@ -378,7 +378,7 @@ const Engine = (() => {
     const forward = (isMale && isYangYear) || (!isMale && !isYangYear);
 
     try {
-      const solarObj = Lunar.Solar.fromYmdHms(birthSolar.year, birthSolar.month, birthSolar.day, 12, 0, 0);
+      const solarObj = Solar.fromYmdHms(birthSolar.year, birthSolar.month, birthSolar.day, 12, 0, 0);
       const lunarObj = solarObj.getLunar();
       const nextTerm = lunarObj.getNextJie();
       const prevTerm = lunarObj.getPrevJie();
