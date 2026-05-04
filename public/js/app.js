@@ -12,6 +12,45 @@ const app = (() => {
     });
   }
 
+  function initDateSelectors() {
+    const yearSel = document.getElementById('birthYear');
+    for (let y = new Date().getFullYear(); y >= 1900; y--) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      if (y === 1990) opt.selected = true;
+      yearSel.appendChild(opt);
+    }
+
+    const monthSel = document.getElementById('birthMonth');
+    for (let m = 1; m <= 12; m++) {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      monthSel.appendChild(opt);
+    }
+
+    populateDays();
+    document.getElementById('birthYear').addEventListener('change', populateDays);
+    document.getElementById('birthMonth').addEventListener('change', populateDays);
+  }
+
+  function populateDays() {
+    const daySel = document.getElementById('birthDay');
+    const year = parseInt(document.getElementById('birthYear').value) || 2024;
+    const month = parseInt(document.getElementById('birthMonth').value) || 1;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const current = daySel.value;
+    daySel.innerHTML = '';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      daySel.appendChild(opt);
+    }
+    if (current && parseInt(current) <= daysInMonth) daySel.value = current;
+  }
+
   function populateRegions() {
     const sel = document.getElementById('birthRegion');
     const isEn = i18n.getLang() === 'en';
@@ -40,7 +79,10 @@ const app = (() => {
     document.getElementById('headerDesc').textContent = i18n.t('headerDesc');
     document.getElementById('inputTitle').textContent = i18n.t('inputTitle');
 
-    document.getElementById('lblDate').textContent = i18n.t('birthDate');
+    document.getElementById('lblYear').textContent = i18n.t('birthYear');
+    document.getElementById('lblMonth').textContent = i18n.t('birthMonth');
+    document.getElementById('lblDay').textContent = i18n.t('birthDay');
+    document.getElementById('lblTime').textContent = i18n.t('birthTime');
     document.getElementById('lblTime').textContent = i18n.t('birthTime');
     document.getElementById('timeHint').textContent = 'If unknown, use 12:00 (noon)';
     document.getElementById('lblGender').textContent = i18n.t('gender');
@@ -78,14 +120,15 @@ const app = (() => {
     const errorBox = document.getElementById('errorBox');
     errorBox.classList.remove('active');
 
-    const dateVal = document.getElementById('birthDate').value;
+    const year = parseInt(document.getElementById('birthYear').value);
+    const month = parseInt(document.getElementById('birthMonth').value);
+    const day = parseInt(document.getElementById('birthDay').value);
     const timeVal = document.getElementById('birthTime').value;
-    if (!dateVal || !timeVal) {
+    if (!year || !month || !day || !timeVal) {
       showError(i18n.t('errorRequired'));
       return;
     }
 
-    const [year, month, day] = dateVal.split('-').map(Number);
     const [hour, minute] = timeVal.split(':').map(Number);
     const gender = document.getElementById('gender').value;
     const regionId = document.getElementById('birthRegion').value;
@@ -463,6 +506,7 @@ const app = (() => {
   }
 
   initRegions();
+  initDateSelectors();
   updateUI();
 
   return { handleSubmit, toggleLang };

@@ -185,6 +185,13 @@ body {
   gap: 16px;
 }
 
+.form-group-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -590,6 +597,7 @@ body {
 /* Responsive */
 @media (max-width: 768px) {
   .form-grid { grid-template-columns: 1fr; }
+  .form-group-row { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .analysis-grid { grid-template-columns: 1fr; }
   .bazi-chart { grid-template-columns: repeat(4, 1fr); }
   .stem-cell, .branch-cell { font-size: 1.5rem; }
