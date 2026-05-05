@@ -74,6 +74,7 @@ const app = (() => {
   }
 
   function updateUI() {
+    const isEn = i18n.getLang() === 'en';
     document.title = i18n.t('appTitle') + ' — ' + i18n.t('appSubtitle');
     document.querySelector('meta[name="description"]').setAttribute('content',
       i18n.getLang() === 'en'
@@ -86,7 +87,6 @@ const app = (() => {
     document.getElementById('lblYear').textContent = i18n.t('birthYear');
     document.getElementById('lblMonth').textContent = i18n.t('birthMonth');
     document.getElementById('lblDay').textContent = i18n.t('birthDay');
-    document.getElementById('lblTime').textContent = i18n.t('birthTime');
     document.getElementById('lblTime').textContent = i18n.t('birthTime');
     document.getElementById('timeHint').textContent = 'If unknown, use 12:00 (noon)';
     document.getElementById('lblGender').textContent = i18n.t('gender');
@@ -893,9 +893,10 @@ const app = (() => {
       : '星期' + (['日', '一', '二', '三', '四', '五', '六'][weekNum] || '');
   }
 
-  initRegions();
-  initDateSelectors();
-  updateUI();
+  // Wrap each init in try/catch so one failure doesn't block the rest
+  try { initRegions(); } catch(e) { console.error('[app] initRegions failed:', e); }
+  try { initDateSelectors(); } catch(e) { console.error('[app] initDateSelectors failed:', e); }
+  try { updateUI(); } catch(e) { console.error('[app] updateUI failed:', e); }
 
   return { handleSubmit, toggleLang };
 })();
