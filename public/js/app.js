@@ -526,8 +526,53 @@ const app = (() => {
     const a = data.almanac;
     if (!a) return;
 
-    const yiStr = a.yi && a.yi.length ? a.yi.join(', ') : (isEn ? 'No specific recommendations' : '无');
-    const jiStr = a.ji && a.ji.length ? a.ji.join(', ') : (isEn ? 'None' : '无');
+    const YI_JI_EN = {
+      '嫁娶': 'Marriage', '祭祀': 'Worship', '祈福': 'Prayer', '求嗣': 'Heir Praying',
+      '开光': 'Consecration', '开市': 'Market Opening', '交易': 'Trading', '立券': 'Contract',
+      '纳财': 'Wealth Intake', '纳畜': 'Livestock Intake', '入宅': 'House Moving',
+      '移徙': 'Relocation', '安葬': 'Burial', '探病': 'Hospital Visit', '伐木': 'Logging',
+      '上梁': 'Roof Beams', '安门': 'Door Installation', '出行': 'Travel', '入学': 'School Start',
+      '安床': 'Bed Installation', '解除': 'Removal', '修造': 'Renovation', '动土': 'Ground Breaking',
+      '破土': 'Earth Breaking', '竖柱': 'Pillar Raising', '经络': 'Meridian Work',
+      '栽种': 'Planting', '牧养': 'Herding', '酝酿': 'Fermenting', '捕捉': 'Capture',
+      '畋猎': 'Hunting', '取渔': 'Fishing', '起基': 'Foundation', '定磉': 'Base Setting',
+      '扫舍': 'Cleaning', '剃头': 'Haircut', '沐浴': 'Bathing', '整手足甲': 'Nail Cutting',
+      '分居': 'Separation', '开厕': 'Toilet Build', '造仓库': 'Warehouse Build',
+      '塞穴': 'Hole Filling', '平治道涂': 'Road Repair', '修饰垣墙': 'Wall Repair',
+      '造车器': 'Vehicle Making', '开柱眼': 'Pillar Holes', '作灶': 'Stove Build',
+      '补垣': 'Wall Filling', '塞穴': 'Cavity Fill', '断蚁': 'Ant Control',
+      '结网': 'Net Weaving', '取渔': 'Fishing', '鼓铸': 'Metal Casting',
+      '装修': 'Decoration', '合寿木': 'Coffin Making', '入殓': 'Encoffining',
+    };
+
+    const DIRECTION_EN = {
+      '坎': 'Kan (North)', '艮': 'Gen (Northeast)', '震': 'Zhen (East)',
+      '巽': 'Xun (Southeast)', '离': 'Li (South)', '坤': 'Kun (Southwest)',
+      '兑': 'Dui (West)', '乾': 'Qian (Northwest)',
+      '正东': 'East', '正西': 'West', '正南': 'South', '正北': 'North',
+      '东南': 'Southeast', '西南': 'Southwest', '东北': 'Northeast', '西北': 'Northwest',
+      '东': 'East', '西': 'West', '南': 'South', '北': 'North',
+    };
+
+    const ANIMAL_EN = {
+      '鼠': 'Rat', '牛': 'Ox', '虎': 'Tiger', '兔': 'Rabbit',
+      '龙': 'Dragon', '蛇': 'Snake', '马': 'Horse', '羊': 'Goat',
+      '猴': 'Monkey', '鸡': 'Rooster', '狗': 'Dog', '猪': 'Pig',
+      '子': 'Rat', '丑': 'Ox', '寅': 'Tiger', '卯': 'Rabbit',
+      '辰': 'Dragon', '巳': 'Snake', '午': 'Horse', '未': 'Goat',
+      '申': 'Monkey', '酉': 'Rooster', '戌': 'Dog', '亥': 'Pig',
+    };
+
+    const mapList = (list, dict) => list.map(s => dict[s] || s).join(', ');
+    const mapStr = (s, dict) => dict[s] || s;
+
+    const yiStr = a.yi && a.yi.length ? (isEn ? mapList(a.yi, YI_JI_EN) : a.yi.join(', ')) : (isEn ? 'No specific recommendations' : '无');
+    const jiStr = a.ji && a.ji.length ? (isEn ? mapList(a.ji, YI_JI_EN) : a.ji.join(', ')) : (isEn ? 'None' : '无');
+    const chongStr = a.chong ? (isEn ? mapStr(a.chong, ANIMAL_EN) : a.chong) : (isEn ? 'None' : '无');
+    const shaStr = a.sha ? (isEn ? mapStr(a.sha, DIRECTION_EN) : a.sha) : (isEn ? 'None' : '无');
+    const caiStr = a.caiPosition ? (isEn ? mapStr(a.caiPosition, DIRECTION_EN) : a.caiPosition) : (isEn ? 'Unknown' : '未知');
+    const xiStr = a.xiPosition ? (isEn ? mapStr(a.xiPosition, DIRECTION_EN) : a.xiPosition) : (isEn ? 'Unknown' : '未知');
+    const fuStr = a.fuPosition ? (isEn ? mapStr(a.fuPosition, DIRECTION_EN) : a.fuPosition) : (isEn ? 'Unknown' : '未知');
 
     container.innerHTML = `
       <div class="almanac-header">
@@ -543,20 +588,20 @@ const app = (() => {
           <div class="almanac-value">${jiStr}</div>
         </div>
         <div class="almanac-item">
-          <div class="almanac-label">${isEn ? 'Clash' : '冲'}</div>
-          <div class="almanac-value">${a.chong || (isEn ? 'None' : '无')}</div>
+          <div class="almanac-label">${isEn ? 'Clash Animal' : '冲'}</div>
+          <div class="almanac-value">${chongStr}</div>
         </div>
         <div class="almanac-item">
           <div class="almanac-label">${isEn ? 'Sha Direction' : '煞'}</div>
-          <div class="almanac-value">${a.sha || (isEn ? 'None' : '无')}</div>
+          <div class="almanac-value">${shaStr}</div>
         </div>
         <div class="almanac-item">
-          <div class="almanac-label">${isEn ? 'Wealth' : '财神'}</div>
-          <div class="almanac-value">${a.caiPosition || (isEn ? 'Unknown' : '未知')}</div>
+          <div class="almanac-label">${isEn ? 'Wealth God' : '财神'}</div>
+          <div class="almanac-value">${caiStr}</div>
         </div>
         <div class="almanac-item">
-          <div class="almanac-label">${isEn ? 'Joy' : '喜神'}</div>
-          <div class="almanac-value">${a.xiPosition || (isEn ? 'Unknown' : '未知')}</div>
+          <div class="almanac-label">${isEn ? 'Joy God' : '喜神'}</div>
+          <div class="almanac-value">${xiStr}</div>
         </div>
       </div>
     `;
