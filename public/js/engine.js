@@ -557,33 +557,88 @@ const Engine = (() => {
     const liunian = fortune.currentLiunian;
     const vitality = analysis.vitality;
     const dm = baziData.dayMaster;
+    const pillars = baziData.pillars;
     const dangerCount = warnings.filter(w => w.level === 'danger').length;
     const cautionCount = warnings.filter(w => w.level === 'caution').length;
 
     let score = 50;
+
+    // === Part 1: Birth chart inherent strength (base ~50, range ~30-65) ===
+
+    // 1a. Five elements balance (up to +8)
+    const fe = analysis.fiveElements;
+    if (analysis.fiveElementSummary?.balanced) {
+      score += 8;
+    } else {
+      const vals = [fe.wood.score, fe.fire.score, fe.earth.score, fe.metal.score, fe.water.score];
+      const max = Math.max(...vals);
+      const min = Math.min(...vals.filter(v => v > 0));
+      const range = max - min;
+      if (range < 3) score += 6;
+      else if (range < 5) score += 3;
+      else if (range > 10) score -= 4;
+    }
+
+    // 1b. Day Master vitality (from -6 to +8)
+    if (vitality?.state === '旺') score += 8;
+    else if (vitality?.state === '相') score += 5;
+    else if (vitality?.state === '休') score -= 3;
+    else if (vitality?.state === '囚') score -= 6;
+    else if (vitality?.state === '死') score -= 8;
+
+    // 1c. Ten gods quality in birth chart (from -6 to +6)
+    const tenGods = analysis.tenGods || [];
+    const authorityCount = tenGods.filter(t => t.type === 'authority').length;
+    const wealthCount = tenGods.filter(t => t.type === 'wealth').length;
+    const resourceCount = tenGods.filter(t => t.type === 'resource').length;
+    const outputCount = tenGods.filter(t => t.type === 'output').length;
+    const hasSevenKill = tenGods.some(t => t.english === 'Seven Kill');
+    const hasRobWealth = tenGods.some(t => t.english === 'Rob Wealth');
+
+    if (authorityCount >= 2) score += 5;
+    else if (authorityCount === 1) score += 2;
+    if (wealthCount >= 2) score += 4;
+    else if (wealthCount === 1) score += 2;
+    if (resourceCount >= 2) score += 3;
+    if (outputCount >= 2) score += 2;
+    if (hasSevenKill) score -= 5;
+    if (hasRobWealth && wealthCount < 2) score -= 2;
+
+    // 1d. Hour pillar contribution (from -4 to +4)
+    const hourPillar = pillars?.hour;
+    if (hourPillar?.tenGod) {
+      const hg = hourPillar.tenGod;
+      if (hg.type === 'authority') score += 3;
+      else if (hg.type === 'wealth') score += 3;
+      else if (hg.type === 'resource') score += 2;
+      else if (hg.type === 'output') score += 1;
+      else if (hg.type === 'self' && tenGods.filter(t => t.type === 'self').length >= 3) score -= 3;
+    }
+
+    // === Part 2: Current fortune cycle (dayun, liunian) (range ~-10 to +18) ===
     const cd = fortune.currentDayun;
     if (cd) {
-      if (cd.tenGod?.type === 'wealth') score += 15;
-      else if (cd.tenGod?.type === 'authority') score += 12;
-      else if (cd.tenGod?.type === 'resource') score += 10;
-      else if (cd.tenGod?.type === 'output') score += 6;
-      else if (cd.tenGod?.type === 'self') score += 4;
+      if (cd.tenGod?.type === 'wealth') score += 6;
+      else if (cd.tenGod?.type === 'authority') score += 5;
+      else if (cd.tenGod?.type === 'resource') score += 4;
+      else if (cd.tenGod?.type === 'output') score += 2;
+      else if (cd.tenGod?.type === 'self') score += 1;
     }
     if (liunian) {
-      if (liunian.tenGod?.type === 'wealth') score += 12;
-      else if (liunian.tenGod?.type === 'authority') score += 6;
-      else if (liunian.tenGod?.type === 'resource') score += 6;
-      else if (liunian.tenGod?.type === 'self') score += 3;
-      if (liunian.tenGod?.english === 'Seven Kill') score -= 15;
+      if (liunian.tenGod?.type === 'wealth') score += 6;
+      else if (liunian.tenGod?.type === 'authority') score += 3;
+      else if (liunian.tenGod?.type === 'resource') score += 3;
+      else if (liunian.tenGod?.type === 'output') score += 1;
+      else if (liunian.tenGod?.type === 'self') score += 1;
+      // Seven Kill in liunian: don't double-penalize, already warned via warnings
+      // but give a gentle nudge
+      if (liunian.tenGod?.english === 'Seven Kill') score -= 4;
     }
-    if (vitality?.state === '旺') score += 15;
-    else if (vitality?.state === '相') score += 10;
-    else if (vitality?.state === '休') score -= 5;
-    else if (vitality?.state === '囚') score -= 12;
-    else if (vitality?.state === '死') score -= 18;
 
-    score -= dangerCount * 18;
-    score -= cautionCount * 8;
+    // === Part 3: Warnings gentle influence (range ~-15 to 0) ===
+    score -= dangerCount * 8;
+    score -= cautionCount * 3;
+
     score = Math.max(0, Math.min(100, score));
 
     let level, summary, keyPoints;
