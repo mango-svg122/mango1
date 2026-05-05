@@ -561,6 +561,8 @@ const app = (() => {
       </div>
     `;
   }
+
+  function elementToChinese(el) {
     return ({ Wood: '木', Fire: '火', Earth: '土', Metal: '金', Water: '水' })[el] || el;
   }
 
