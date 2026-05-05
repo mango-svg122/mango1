@@ -898,5 +898,5 @@ const app = (() => {
   try { initDateSelectors(); } catch(e) { console.error('[app] initDateSelectors failed:', e); }
   try { updateUI(); } catch(e) { console.error('[app] updateUI failed:', e); }
 
-  return { handleSubmit, toggleLang };
+  return { handleSubmit, toggleLang, downloadShare, shareTwitter, shareFacebook, copyLink };
 })();
