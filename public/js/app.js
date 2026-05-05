@@ -850,14 +850,18 @@ const app = (() => {
   }
 
   function downloadShare() {
-    generateShareCard();
-    setTimeout(() => {
-      const canvas = document.getElementById('shareCanvas');
-      const link = document.createElement('a');
-      link.download = 'OracleDivine-BaZi-Reading.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    }, 500);
+    try {
+      generateShareCard();
+      setTimeout(() => {
+        const canvas = document.getElementById('shareCanvas');
+        const link = document.createElement('a');
+        link.download = 'OracleDivine-BaZi-Reading.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }, 500);
+    } catch(e) {
+      console.error('[app] downloadShare failed:', e);
+    }
   }
 
   function shareTwitter() {
@@ -898,5 +902,5 @@ const app = (() => {
   try { initDateSelectors(); } catch(e) { console.error('[app] initDateSelectors failed:', e); }
   try { updateUI(); } catch(e) { console.error('[app] updateUI failed:', e); }
 
-  return { handleSubmit, toggleLang };
+  return { handleSubmit, toggleLang, downloadShare, shareTwitter, shareFacebook, copyLink };
 })();
