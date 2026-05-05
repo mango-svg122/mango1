@@ -75,6 +75,10 @@ const app = (() => {
 
   function updateUI() {
     document.title = i18n.t('appTitle') + ' — ' + i18n.t('appSubtitle');
+    document.querySelector('meta[name="description"]').setAttribute('content',
+      i18n.getLang() === 'en'
+        ? 'Free BaZi (Four Pillars of Destiny) fortune reading. Get your personalized birth chart, ten gods analysis, five elements distribution, and daily almanac based on ancient Chinese metaphysics and the I Ching.'
+        : '免费八字排盘与命理分析。基于中国千年易经智慧，推算您的四柱八字、十神分析、五行分布和每日运势。');
     document.getElementById('subtitle').textContent = i18n.t('appSubtitle');
     document.getElementById('headerDesc').textContent = i18n.t('headerDesc');
     document.getElementById('inputTitle').textContent = i18n.t('inputTitle');
@@ -97,7 +101,9 @@ const app = (() => {
     document.getElementById('analysisTitle').innerHTML = `<span class="accent">✦</span> ${i18n.t('analysis')}`;
     document.getElementById('dayunTitle').innerHTML = `<span class="accent">✦</span> ${i18n.t('dayun')}`;
     document.getElementById('liunianTitle').innerHTML = `<span class="accent">✦</span> ${i18n.t('liunian')}`;
+    document.getElementById('quickTakeTitle').innerHTML = `<span class="accent">✦</span> ${isEn ? 'Your Fortune Outlook' : '运势总评'}`;
     document.getElementById('glossaryTitle').innerHTML = `<span class="accent">✦</span> ${i18n.t('glossary')}`;
+    document.getElementById('shareTitle').innerHTML = `<span class="accent">✦</span> ${isEn ? 'Share Your Fortune' : '分享运势'}`;
     document.getElementById('warningsTitle').innerHTML = `<span class="accent">⚠</span> ${i18n.t('warnings')}`;
     document.getElementById('almanacTitle').innerHTML = `<span class="accent">✦</span> ${i18n.t('almanac')}`;
 
@@ -144,6 +150,7 @@ const app = (() => {
       const result = api.calculate({ year, month, day, hour, minute, gender, tzOffset, lng, lat });
       if (result.success) {
         currentData = result.data;
+        renderQuickTake(result.data);
         renderResults(result.data);
         renderAlmanac(result.data);
         renderWarnings(result.data);
@@ -520,6 +527,40 @@ const app = (() => {
     }).join('');
   }
 
+  function renderQuickTake(data) {
+    const container = document.getElementById('quickTakeContainer');
+    const section = document.getElementById('quickTakeSection');
+    const qt = data.quickTake;
+    const isEn = i18n.getLang() === 'en';
+    if (!qt) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+
+    const scoreColor = qt.score >= 60 ? 'var(--wood)' : qt.score >= 40 ? 'var(--accent-gold)' : 'var(--accent-red)';
+    const levelLabel = isEn ? qt.level.charAt(0).toUpperCase() + qt.level.slice(1) : qt.level;
+
+    const indicator = qt.level === 'excellent' ? '🌟' : qt.level === 'good' ? '👍' : qt.level === 'neutral' ? '➡️' : qt.level === 'cautious' ? '⚠️' : '🔴';
+
+    container.innerHTML = `
+      <div class="quicktake-score" style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+        <div style="font-size:2rem">${indicator}</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <strong style="color:${scoreColor};font-size:1.1rem">${levelLabel}</strong>
+            <span style="font-size:0.9rem;color:var(--text-muted)">${Math.round(qt.score)}/100</span>
+          </div>
+          <div style="height:8px;background:var(--border-color);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${qt.score}%;background:${scoreColor};border-radius:4px;transition:width 0.5s"></div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:0.95rem;line-height:1.7;color:var(--text-secondary);margin-bottom:12px">${qt.summary}</p>
+      ${qt.keyPoints && qt.keyPoints.length ? '<div style="display:flex;flex-wrap:wrap;gap:8px">' + qt.keyPoints.map(kp =>
+        `<span style="font-size:0.8rem;background:var(--card-bg);border:1px solid var(--border-color);border-radius:4px;padding:4px 10px;color:var(--text-secondary)">${kp}</span>`
+      ).join('') + '</div>' : ''}
+      ${qt.highlights && qt.highlights.length ? '<div style="margin-top:10px;font-size:0.85rem;color:var(--text-muted)">' + qt.highlights.map(h => `<div>• ${h}</div>`).join('') + '</div>' : ''}
+    `;
+  }
+
   function renderAlmanac(data) {
     const container = document.getElementById('almanacContainer');
     const isEn = i18n.getLang() === 'en';
@@ -574,9 +615,41 @@ const app = (() => {
     const xiStr = a.xiPosition ? (isEn ? mapStr(a.xiPosition, DIRECTION_EN) : a.xiPosition) : (isEn ? 'Unknown' : '未知');
     const fuStr = a.fuPosition ? (isEn ? mapStr(a.fuPosition, DIRECTION_EN) : a.fuPosition) : (isEn ? 'Unknown' : '未知');
 
+    const almanacSummary = (() => {
+      const yi = a.yi || [];
+      const ji = a.ji || [];
+      const yiCount = yi.length;
+      const jiCount = ji.length;
+
+      const has = (list, word) => list.some(s => s.includes(word));
+
+      if (!isEn) {
+        if (has(yi, '嫁娶') && has(yi, '祈福')) return '今日宜嫁娶、祈福，万事大吉。';
+        if (has(yi, '开市') && has(yi, '交易')) return '今日利开业、交易、签约，财运亨通。';
+        if (has(yi, '祭祀') && has(yi, '祈福')) return '今日宜祭祀、祈福，修身养性之日。';
+        if (has(ji, '入宅') || has(ji, '移徙')) return '今日忌搬迁、入宅，不宜改变居所。';
+        if (has(ji, '安葬') || has(ji, '探病')) return '今日忌安葬、探病，诸事宜谨慎。';
+        if (has(ji, '伐木') || has(ji, '上梁')) return '今日忌动土、伐木，不宜破土开工。';
+        if (jiCount > yiCount) return '今日宜静不宜动，诸事多加小心。';
+        if (yiCount > jiCount) return '今日吉多凶少，适合规划与行动。';
+        return '今日运势平平，宜按部就班。';
+      }
+
+      if (has(yi, '嫁娶') && has(yi, '祈福')) return 'An excellent day for weddings, worship, and celebration.';
+      if (has(yi, '开市') || has(yi, '交易')) return 'A favorable day for business, trading, and financial decisions.';
+      if (has(yi, '祭祀')) return 'A day well-suited for reflection, offerings, and spiritual practice.';
+      if (has(ji, '入宅') || has(ji, '移徙')) return 'Avoid relocation or moving house today. Focus on stability.';
+      if (has(ji, '安葬') || has(ji, '探病')) return 'A cautious day — avoid burials and hospital visits if possible.';
+      if (has(ji, '伐木') || has(ji, '上梁')) return 'Not a good day for construction or groundbreaking activities.';
+      if (jiCount > yiCount) return 'Better to keep a low profile today. Avoid major undertakings.';
+      if (yiCount > jiCount) return 'Auspicious signs outweigh inauspicious ones. A good day to move forward.';
+      return 'A neutral day — proceed with routine matters.';
+    })();
+
     container.innerHTML = `
       <div class="almanac-header">
         <div class="almanac-date">${a.date} | ${isEn ? 'Lunar' : '农历'} ${a.lunarMonth}${isEn ? '' : '月'}${a.lunarDay}${isEn ? '' : '日'} (${a.ganZhi})</div>
+        <div class="almanac-summary">${almanacSummary}</div>
       </div>
       <div class="almanac-grid">
         <div class="almanac-item good">
@@ -609,6 +682,209 @@ const app = (() => {
 
   function elementToChinese(el) {
     return ({ Wood: '木', Fire: '火', Earth: '土', Metal: '金', Water: '水' })[el] || el;
+  }
+
+  function generateShareCard() {
+    if (!currentData) return;
+    const canvas = document.getElementById('shareCanvas');
+    const preview = document.getElementById('sharePreview');
+    const ctx = canvas.getContext('2d');
+    const W = 600, H = 800;
+    canvas.width = W;
+    canvas.height = H;
+
+    const bg = '#F5F0E8';
+    const text = '#2C2416';
+    const accent = '#CC3333';
+    const gold = '#C4964A';
+    const muted = '#9C8C7A';
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(20, 20, W - 40, H - 40);
+
+    ctx.fillStyle = text;
+    ctx.font = 'bold 28px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('☯ OracleDivine', W / 2, 80);
+
+    ctx.font = '16px Georgia, serif';
+    ctx.fillStyle = accent;
+    ctx.fillText('BaZi Four Pillars of Destiny', W / 2, 110);
+
+    ctx.strokeStyle = muted;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(60, 130);
+    ctx.lineTo(W - 60, 130);
+    ctx.stroke();
+
+    const d = currentData;
+    const gz = d.ganZhi;
+    const dm = d.dayMaster;
+
+    ctx.font = '18px Georgia, serif';
+    ctx.fillStyle = text;
+    ctx.textAlign = 'left';
+    ctx.fillText('BaZi Chart', 50, 175);
+
+    ctx.font = '22px Georgia, serif';
+    ctx.fillStyle = accent;
+    ctx.textAlign = 'center';
+    ctx.fillText(gz.year + '  ' + gz.month + '  ' + gz.day + '  ' + gz.hour, W / 2, 215);
+
+    ctx.font = '15px Georgia, serif';
+    ctx.fillStyle = text;
+    ctx.textAlign = 'left';
+    ctx.fillText('Day Master: ' + dm.stem + ' (' + dm.english + ' ' + dm.element + ' ' + dm.yinYang + ')', 50, 255);
+    ctx.fillText('Zodiac: ' + d.yearAnimal, 50, 280);
+
+    const qt = d.quickTake;
+    ctx.strokeStyle = muted;
+    ctx.beginPath();
+    ctx.moveTo(60, 305);
+    ctx.lineTo(W - 60, 305);
+    ctx.stroke();
+
+    ctx.fillStyle = text;
+    ctx.font = '18px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Fortune Score', 50, 335);
+
+    const score = qt ? Math.round(qt.score) : 50;
+    const barW = 400, barH = 12;
+    const barX = 100, barY = 350;
+    ctx.fillStyle = '#D4C5A9';
+    ctx.fillRect(barX, barY, barW, barH);
+    const scoreColor = score >= 60 ? '#2E7D32' : score >= 40 ? '#C4964A' : '#CC3333';
+    ctx.fillStyle = scoreColor;
+    ctx.fillRect(barX, barY, barW * score / 100, barH);
+
+    ctx.fillStyle = text;
+    ctx.font = 'bold 14px Georgia, serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(score + '/100', barX + barW + 15, barY + 12);
+
+    if (qt) {
+      const words = wrapText(ctx, qt.summary, 500, 16);
+      let y = 390;
+      ctx.font = '14px Georgia, serif';
+      ctx.fillStyle = muted;
+      ctx.textAlign = 'left';
+      for (const line of words.slice(0,3)) {
+        ctx.fillText(line, 50, y);
+        y += 22;
+      }
+    }
+
+    ctx.fillStyle = muted;
+    ctx.font = '11px Georgia, serif';
+    ctx.textAlign = 'center';
+
+    
+
+    // QR code placeholder
+    ctx.fillStyle = '#2C2416';
+    ctx.fillRect(W / 2 - 50, H - 220, 100, 100);
+    ctx.fillStyle = bg;
+    ctx.font = '10px Georgia, serif';
+    ctx.fillText('QR', W / 2, H - 170);
+
+    ctx.fillStyle = muted;
+    ctx.font = '12px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Scan to get your own BaZi reading', W / 2, H - 105);
+    ctx.fillStyle = accent;
+    ctx.font = '11px Georgia, serif';
+    ctx.fillText('mango-svg122.github.io/mango1', W / 2, H - 80);
+
+    canvas.style.display = 'block';
+    preview.innerHTML = '';
+    preview.appendChild(canvas);
+
+    generateQRCode(W / 2, H);
+  }
+
+  function wrapText(ctx, text, maxW, fontSize) {
+    ctx.font = fontSize + 'px Georgia, serif';
+    const words = text.split(' ');
+    const lines = [];
+    let current = '';
+    for (const w of words) {
+      const test = current ? current + ' ' + w : w;
+      if (ctx.measureText(test).width > maxW) {
+        lines.push(current);
+        current = w;
+      } else {
+        current = test;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  }
+
+  let qrInstance = null;
+  function generateQRCode(cx, cy) {
+    const container = document.createElement('div');
+    container.id = 'qrcode-temp';
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    document.body.appendChild(container);
+    try {
+      qrInstance = new QRCode(container, {
+        text: 'https://mango-svg122.github.io/mango1/',
+        width: 100,
+        height: 100,
+      });
+      const img = container.querySelector('img');
+      if (img) {
+        const canvas = document.getElementById('shareCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, canvas.width / 2 - 50, canvas.height - 220, 100, 100);
+      }
+    } catch(e) { /* QR library may not be loaded */ }
+    setTimeout(() => { const el = document.getElementById('qrcode-temp'); if (el) el.remove(); }, 1000);
+  }
+
+  function downloadShare() {
+    generateShareCard();
+    setTimeout(() => {
+      const canvas = document.getElementById('shareCanvas');
+      const link = document.createElement('a');
+      link.download = 'OracleDivine-BaZi-Reading.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }, 500);
+  }
+
+  function shareTwitter() {
+    const dm = currentData?.dayMaster;
+    const text = dm
+      ? 'I just got my BaZi reading on OracleDivine! My Day Master is ' + dm.stem + ' (' + dm.english + ' ' + dm.element + '). Check yours:'
+      : 'I just got my BaZi reading on OracleDivine! Check yours:';
+    const url = 'https://mango-svg122.github.io/mango1/';
+    const shareUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+  }
+
+  function shareFacebook() {
+    const url = 'https://mango-svg122.github.io/mango1/';
+    const shareUrl = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText('https://mango-svg122.github.io/mango1/').then(() => {
+      const btn = document.getElementById('btnCopy');
+      const orig = btn.textContent;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = orig, 2000);
+    }).catch(() => {
+      prompt('Copy this URL:', 'https://mango-svg122.github.io/mango1/');
+    });
   }
 
   function getWeekdayName(weekNum, isEn) {

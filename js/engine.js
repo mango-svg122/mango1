@@ -549,7 +549,77 @@ const Engine = (() => {
     const almanac = calcAlmanac();
     const liunianWarnings = calcLiunianWarnings(fortune.currentLiunian, baziData);
     const allWarnings = [...(analysis.interpretations.warnings || []), ...liunianWarnings];
-    return { ...baziData, analysis, fortune, almanac, warnings: allWarnings };
+    const quickTake = calcQuickTake(analysis, fortune, baziData, allWarnings);
+    return { ...baziData, analysis, fortune, almanac, warnings: allWarnings, quickTake };
+  }
+
+  function calcQuickTake(analysis, fortune, baziData, warnings) {
+    const liunian = fortune.currentLiunian;
+    const vitality = analysis.vitality;
+    const dm = baziData.dayMaster;
+    const dangerCount = warnings.filter(w => w.level === 'danger').length;
+    const cautionCount = warnings.filter(w => w.level === 'caution').length;
+
+    let score = 50;
+    const cd = fortune.currentDayun;
+    if (cd) {
+      if (cd.tenGod?.type === 'wealth') score += 15;
+      else if (cd.tenGod?.type === 'authority') score += 12;
+      else if (cd.tenGod?.type === 'resource') score += 10;
+      else if (cd.tenGod?.type === 'output') score += 6;
+      else if (cd.tenGod?.type === 'self') score += 4;
+    }
+    if (liunian) {
+      if (liunian.tenGod?.type === 'wealth') score += 12;
+      else if (liunian.tenGod?.type === 'authority') score += 6;
+      else if (liunian.tenGod?.type === 'resource') score += 6;
+      else if (liunian.tenGod?.type === 'self') score += 3;
+      if (liunian.tenGod?.english === 'Seven Kill') score -= 15;
+    }
+    if (vitality?.state === '旺') score += 15;
+    else if (vitality?.state === '相') score += 10;
+    else if (vitality?.state === '休') score -= 5;
+    else if (vitality?.state === '囚') score -= 12;
+    else if (vitality?.state === '死') score -= 18;
+
+    score -= dangerCount * 18;
+    score -= cautionCount * 8;
+    score = Math.max(0, Math.min(100, score));
+
+    let level, summary, keyPoints;
+
+    if (score >= 75) {
+      level = 'excellent';
+      summary = `Your fortune this year is bright and favorable. ${dm.english} ${dm.element} energy flows smoothly — opportunities are abundant. A great time to pursue your goals and expand your horizons.`;
+      keyPoints = ['Energy is at a peak — take initiative', 'Opportunities in career and finance', 'A good year for relationships'];
+    } else if (score >= 60) {
+      level = 'good';
+      summary = `A favorable year ahead. Your ${dm.english} ${dm.element} foundation is solid, though some effort is needed to maintain momentum. Progress is steady.`;
+      keyPoints = ['Good time for steady progress', 'Moderate career opportunities', 'Maintain health routines'];
+    } else if (score >= 45) {
+      level = 'neutral';
+      summary = `A mixed year — there are both opportunities and challenges. ${dm.english} ${dm.element} energy is moderate. Careful planning and patience will serve you well.`;
+      keyPoints = ['Balance risks carefully', 'Avoid impulsive decisions', 'Focus on self-improvement'];
+    } else if (score >= 30) {
+      level = 'cautious';
+      summary = `This year requires extra caution. ${dm.english} ${dm.element} energy is constrained. Guard against conflicts, avoid major investments, and take care of your health.`;
+      keyPoints = ['Avoid major life changes', 'Watch finances closely', 'Prioritize health and rest'];
+    } else {
+      level = 'difficult';
+      summary = `A challenging year. ${dm.english} ${dm.element} energy is at its lowest. Focus on preservation rather than expansion. Seek support from trusted friends and family.`;
+      keyPoints = ['Conserve energy — avoid overexertion', 'Delay major decisions', 'Strengthen your support network'];
+    }
+
+    const highlights = [];
+    if (fortune.currentDayun) {
+      const d = fortune.currentDayun;
+      highlights.push(`Current 10-year cycle: ${d.ganZhi} (${d.tenGod?.english || ''})`);
+    }
+    if (liunian && liunian.tenGod) {
+      highlights.push(`This year (${liunian.ganZhi}): ${liunian.tenGod.english} influence`);
+    }
+
+    return { score, level, summary, keyPoints, highlights, dangers: dangerCount, cautions: cautionCount };
   }
 
   function calcLiunianWarnings(liunian, baziData) {
